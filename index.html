@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Demo Interaksi Suara dengan Pilihan Suara</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  button { font-size: 18px; padding: 10px 20px; margin-right: 10px; }
+  #output { margin-top: 20px; font-size: 20px; min-height: 40px; }
+  #voiceSelect { font-size: 16px; padding: 5px; margin-left: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Demo Interaksi Suara dengan Pilihan Suara</h2>
+
+<button id="startBtn">🎤 Mulai Bicara</button>
+<button id="stopBtn" disabled>⏹️ Berhenti</button>
+
+<label for="voiceSelect">Pilih suara:</label>
+<select id="voiceSelect"></select>
+
+<div id="output">Tekan tombol mulai dan bicara...</div>
+
+<script>
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const output = document.getElementById('output');
+  const voiceSelect = document.getElementById('voiceSelect');
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    output.textContent = 'Maaf, browser ini tidak mendukung Speech Recognition.';
+  } else {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      output.textContent = 'Mendengarkan... Silakan bicara.';
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    };
+
+    recognition.onresult = (event) => {
+      const speechText = event.results[0][0].transcript;
+      output.textContent = 'Kamu berkata: ' + speechText;
+      speakText("Kamu mengatakan: " + speechText + ". Ini simulasi balasan GPT.");
+    };
+
+    recognition.onerror = (event) => {
+      output.textContent = 'Error: ' + event.error;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    };
+
+    recognition.onend = () => {
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    };
+
+    startBtn.onclick = () => recognition.start();
+    stopBtn.onclick = () => recognition.stop();
+
+    // Load dan tampilkan daftar suara
+    function loadVoices() {
+      const voices = window.speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '';
+      voices.forEach((voice, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    // Karena suara kadang belum muncul langsung, panggil ulang saat suara berubah
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        alert('Browser ini tidak mendukung text-to-speech.');
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = window.speechSynthesis.getVoices();
+      const selectedVoiceIndex = parseInt(voiceSelect.value);
+      if (voices[selectedVoiceIndex]) {
+        utterance.voice = voices[selectedVoiceIndex];
+      }
+      utterance.lang = 'id-ID';
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+</script>
+
+</body>
+</html>
